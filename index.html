@@ -136,12 +136,40 @@ $('shop').innerHTML=Object.entries(DATA).map(([k,v])=>'<button class="champ" tit
 function arange(t){return DATA[t.k].range*(t.k==='ashe'?Math.pow(1.05,Math.min(t.up,2)):1)}
 function aspeed(t){return t.k==='ashe'?[.8,1,1.2,1.4][t.up]:1/DATA[t.k].rate}
 let upgradeRenderKey=null;
-function ui(){$('gold').textContent=gold;$('life').textContent=life;$('wave').textContent=wave+'/25';$('kills').textContent=kills;$('start').disabled=active||over||wave>=25;document.querySelectorAll('.champ[data-k]').forEach(b=>b.disabled=gold<DATA[b.dataset.k].cost);let panel=$('upgradePanel');if(selected){panel.classList.add('open');let v=DATA[selected.k],cost=[200,300,800][selected.up];let renderKey=towers.indexOf(selected)+'|'+selected.k+'|'+selected.up;if(upgradeRenderKey!==renderKey){upgradeRenderKey=renderKey;$('upgradeContent').innerHTML='<h3>'+v.name+'</h3><p>Alcance: '+Math.round(arange(selected))+'<br>Dano: '+v.damage+'<br>Ataques/s: '+aspeed(selected).toFixed(1)+'<br>Melhoria: '+selected.up+'/3</p>'+(selected.k==='ashe'&&selected.up<3?'<button id="upgrade">✦ Melhorar — '+cost+' ouro</button>':'<p>Melhorias concluídas ou indisponíveis.</p>');let up=$('upgrade');if(up){up.disabled=gold<cost;
-// A compra acontece no pointerdown para não ser cancelada pelo redesenho
-// contínuo da interface enquanto os inimigos estão avançando.
-const buyUpgrade=()=>{const hero=selected;if(!hero||!towers.includes(hero)||hero.k!=='ashe'||hero.up>=3)return;const price=[200,300,800][hero.up];if(gold<price)return;gold-=price;hero.up++;hero.cd=0;hero.ult=5;upgradeRenderKey=null;ui()};
-up.addEventListener('pointerdown',e=>{if(up.disabled)return;e.preventDefault();e.stopPropagation();buyUpgrade()});
-up.addEventListener('click',e=>{e.stopPropagation();if(e.detail===0)buyUpgrade()})}}if($('upgrade'))$('upgrade').disabled=gold<cost;}else{panel.classList.remove('open');upgradeRenderKey=null;}$('closeUpgrade').onclick=()=>{selected=null;chosen=null;ui()}}
+function ui(){$('gold').textContent=gold;$('life').textContent=life;$('wave').textContent=wave+'/25';$('kills').textContent=kills;$('start').disabled=active||over||wave>=25;document.querySelectorAll('.champ[data-k]').forEach(b=>b.disabled=gold<DATA[b.dataset.k].cost);let panel=$('upgradePanel');if(selected&&towers.includes(selected)){
+ panel.classList.add('open');
+ const v=DATA[selected.k],cost=[200,300,800][selected.up];
+ const renderKey=towers.indexOf(selected)+'|'+selected.k+'|'+selected.up;
+ if(upgradeRenderKey!==renderKey){
+  upgradeRenderKey=renderKey;
+  $('upgradeContent').innerHTML='<h3>'+v.name+'</h3><p>Alcance: '+Math.round(arange(selected))+'<br>Dano: '+v.damage+'<br>Ataques/s: '+aspeed(selected).toFixed(1)+'<br>Melhoria: '+selected.up+'/3</p>'+(selected.k==='ashe'&&selected.up<3?'<button type="button" id="upgrade">✦ Melhorar — '+cost+' ouro</button>':'<p>Melhorias concluídas ou indisponíveis.</p>');
+ }
+ const up=$('upgrade');
+ if(up){up.disabled=gold<cost;up.dataset.cost=cost}
+}else{panel.classList.remove('open');upgradeRenderKey=null}
+$('closeUpgrade').onclick=()=>{selected=null;chosen=null;ui()}
+}
+function buyAsheUpgrade(){
+ const hero=selected;
+ if(!hero||!towers.includes(hero)||hero.k!=='ashe'||hero.up>=3)return;
+ const cost=[200,300,800][hero.up];
+ if(gold<cost){$('message').textContent='Ouro insuficiente para melhorar Ashe';return}
+ gold-=cost;hero.up++;hero.cd=0;hero.ult=5;
+ upgradeRenderKey=null;
+ $('message').textContent='Ashe melhorada para UP '+hero.up+' durante a batalha!';
+ ui();
+}
+// Delegação: o listener fica no painel permanente, não no botão recriado.
+$('upgradePanel').addEventListener('click',e=>{
+ const b=e.target.closest('#upgrade');
+ if(!b)return;
+ e.preventDefault();e.stopPropagation();buyAsheUpgrade();
+});
+$('upgradePanel').addEventListener('touchend',e=>{
+ const b=e.target.closest('#upgrade');
+ if(!b)return;
+ e.preventDefault();e.stopPropagation();buyAsheUpgrade();
+},{passive:false});
 function reset(){queue=[];gold=400;life=20;wave=0;kills=0;enemies=[];towers=[];fx=[];remaining=0;spawn=0;active=false;speed=1;drag=null;chosen=null;selected=null;$('upgradePanel').classList.remove('open');upgradeRenderKey=null;axis=false;over=false;last=0;$('speed').textContent='⏩';$('axis').textContent='◎';$('message').textContent='Escolha um campeão e arraste até uma área livre do mapa.';ui()}
 function loc(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}}function road(p){return path.some((q,i)=>i%5===0&&dist(p,q)<62)}function valid(p){return p.x>48&&p.x<W-48&&p.y>48&&p.y<H-48&&!road(p)&&!towers.some(t=>dist(t,p)<90)}function place(k,p){if(!DATA[k]||gold<DATA[k].cost){$('message').textContent='Ouro insuficiente.';return}if(!valid(p)){$('message').textContent='Local inválido. Escolha uma área livre fora da estrada.';return}gold-=DATA[k].cost;towers.push({x:p.x,y:p.y,k,cd:0,up:0,ult:5});selected=null;chosen=null;$('message').textContent=DATA[k].name+' posicionada!';ui()}
 // Cross-element pointer tracking enables genuine drag from the sidebar to the canvas on touch devices.
