@@ -239,7 +239,7 @@ function tick(dt){if(!active||over)return;if(remaining){spawn-=dt;if(spawn<=0){e
    fx.push({iceSpecial:true,x:t.x+12,y:t.y-22,tx:p.x,ty:p.y-10,
     target:target,targetS:target.s,ttl:duration,maxT:duration});
    t.ult=5;t.shotTime=performance.now();
-   $('message').textContent='v7.0: Flecha explosiva lançada';
+   $('message').textContent='v7.1: Flecha explosiva lançada';
   }else t.ult=0;
  }
 }t.cd-=dt;if(t.cd>0)continue;let targets=enemies.filter(e=>e.hp>0&&dist(t,at(e.s))<range).sort((a,b)=>b.s-a.s);if(targets.length){let count=t.k==='ashe'?(t.up>=2?3:t.up===1?2:1):1;for(let e of targets.slice(0,count))attack(t,e);t.cd=1/aspeed(t)}}for(let i=enemies.length-1;i>=0;i--){let e=enemies[i];if(e.hp<=0)enemies.splice(i,1);else if(e.s>=total){enemies.splice(i,1);life--;if(life<=0){active=false;over=true;$('message').textContent='Fim de jogo! Reinicie para tentar novamente.'}}}// Update projectiles first, then apply special damage to an explicitly bounded list.
@@ -254,16 +254,16 @@ for(const f of completedSpecials){
  // A lista é um retrato dos alvos próximos, não a fila de spawn.
  const center=f.target&&enemies.includes(f.target)&&f.target.hp>0
   ?at(f.target.s):at(f.targetS);
- const blastRadius=75;
+ const blastRadius=125;
  const candidates=enemies.filter(e=>e.hp>0&&e.layer>0&&
   Math.hypot(at(e.s).x-center.x,at(e.s).y-center.y)<=blastRadius);
  candidates.sort((a,b)=>Math.abs(a.s-f.targetS)-Math.abs(b.s-f.targetS));
- const affected=candidates.slice(0,3);
+ const affected=candidates.slice(0,7);
  const blastDamage=8;
  for(const enemy of affected){
   // Não usa hit() nem percorre múltiplas camadas. Só este inimigo muda.
   enemy.hp=Math.max(0,enemy.hp-blastDamage);
-  enemy.slow=Math.max(enemy.slow,1.5);
+  enemy.stun=Math.max(enemy.stun,1.0);
   if(enemy.hp===0){
    gold+=3;kills++;
    enemy.layer--;
@@ -271,7 +271,7 @@ for(const f of completedSpecials){
   }
  }
  fx.push({iceExplosion:true,x:center.x,y:center.y-8,r:blastRadius,ttl:.42,maxT:.42});
- $('message').textContent='v7.0: flecha explosiva atingiu '+affected.length+' inimigo(s) (-8 HP cada)';
+ $('message').textContent='v7.1: flecha explosiva congelou '+affected.length+' inimigo(s) (-8 HP cada)';
 }
 fx=fx.filter(f=>f.iceSpecial?f.ttl>0:(f.ttl-=dt)>0);
 if(!remaining&&!enemies.length&&!fx.some(f=>f.arrow)&&!over){active=false;gold+=40;$('message').textContent=wave===25?'Vitória! Você concluiu as 25 ondas!':'Onda '+wave+' concluída! +40 ouro.'}ui()}
