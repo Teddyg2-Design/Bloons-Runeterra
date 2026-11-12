@@ -229,9 +229,8 @@ function drawTeemo(t){
  g.save();g.translate(t.x,t.y+bob);g.rotate(bend);g.translate(-recoil,0);
  if(sprite.complete&&sprite.naturalWidth){g.save();g.filter='none';g.drawImage(sprite,-32,-62,64,76);g.restore()}
  else{g.font='38px system-ui';g.textAlign='center';g.fillText('🍄',0,0)}
- // Outfit accents are drawn independently of sprite pixels for reliable UP color changes.
- if(t.up>0){g.save();g.fillStyle=['','#1776e5','#c92b37','#171a21'][t.up];g.strokeStyle=t.up===3?'#656b7b':'#d5b15a';g.lineWidth=2;
- g.beginPath();g.ellipse(0,-45,26,8,0,Math.PI,Math.PI*2);g.fill();g.stroke();g.beginPath();g.moveTo(-15,-24);g.quadraticCurveTo(0,-30,15,-24);g.lineTo(14,-8);g.quadraticCurveTo(0,-2,-14,-8);g.closePath();g.fill();g.stroke();g.restore()}
+ // A roupa e o capacete ja estao coloridos nos sprites de cada UP.
+ // Nao desenhar formas adicionais sobre o personagem.
  // Visually readable blowpipe, animated while firing.
  if(shooting){g.save();g.translate(7,-26);g.rotate(-.16);
  g.strokeStyle='#62411e';g.lineWidth=7;g.lineCap='round';g.beginPath();g.moveTo(-4,0);g.lineTo(30,0);g.stroke();
