@@ -165,7 +165,7 @@ $('upgradePanel').addEventListener('click',e=>{
  if(!b)return;
  e.preventDefault();e.stopPropagation();buyAsheUpgrade();
 });
-function reset(){queue=[];gold=1500;life=20;wave=0;kills=0;enemies=[];towers=[];fx=[];remaining=0;spawn=0;active=false;speed=1;drag=null;chosen=null;selected=null;$('upgradePanel').classList.remove('open');upgradeRenderKey=null;axis=false;over=false;last=0;$('speed').textContent='⏩';$('axis').textContent='◎';$('message').textContent='Escolha um campeão e arraste até uma área livre do mapa.';ui()}
+function reset(){queue=[];gold=1500;life=20;wave=0;kills=0;enemies=[];towers=[];fx=[];remaining=0;spawn=0;active=false;speed=1;drag=null;chosen=null;selected=null;$('upgradePanel').classList.remove('open');upgradeRenderKey=null;axis=false;over=false;last=0;$('speed').textContent='⏩';$('axis').textContent='◎';$('message').textContent='v6.9 — TESTE CONTROLADO: 1500 ouro, especial causa 1 de dano em 1 inimigo.';ui()}
 function loc(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}}function road(p){return path.some((q,i)=>i%5===0&&dist(p,q)<62)}function valid(p){return p.x>48&&p.x<W-48&&p.y>48&&p.y<H-48&&!road(p)&&!towers.some(t=>dist(t,p)<90)}function place(k,p){if(!DATA[k]||gold<DATA[k].cost){$('message').textContent='Ouro insuficiente.';return}if(!valid(p)){$('message').textContent='Local inválido. Escolha uma área livre fora da estrada.';return}gold-=DATA[k].cost;towers.push({x:p.x,y:p.y,k,cd:0,up:0,ult:5});selected=null;chosen=null;$('message').textContent=DATA[k].name+' posicionada!';ui()}
 // Cross-element pointer tracking enables genuine drag from the sidebar to the canvas on touch devices.
 document.querySelectorAll('.champ[data-k]').forEach(b=>{b.addEventListener('pointerdown',e=>{if(b.disabled)return;e.preventDefault();chosen=b.dataset.k;selected=null;drag={k:chosen,p:null};b.setPointerCapture(e.pointerId);ui()});b.addEventListener('pointermove',e=>{if(!drag)return;let r=canvas.getBoundingClientRect();drag.p=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom?loc(e):null});b.addEventListener('pointerup',e=>{if(!drag)return;let r=canvas.getBoundingClientRect(),p=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom?loc(e):null,k=drag.k;drag=null;if(p)place(k,p);else $('message').textContent='Toque em um ponto livre do mapa para posicionar '+DATA[k].name+'.'});b.addEventListener('pointercancel',()=>drag=null)});
@@ -239,7 +239,7 @@ function tick(dt){if(!active||over)return;if(remaining){spawn-=dt;if(spawn<=0){e
    fx.push({iceSpecial:true,x:t.x+12,y:t.y-22,tx:p.x,ty:p.y-10,
     target:target,targetS:target.s,ttl:duration,maxT:duration});
    t.ult=5;t.shotTime=performance.now();
-   $('message').textContent='v6.8: Flecha especial lançada (sem dano)';
+   $('message').textContent='v6.9: Flecha especial lançada (dano mínimo)';
   }else t.ult=0;
  }
 }t.cd-=dt;if(t.cd>0)continue;let targets=enemies.filter(e=>e.hp>0&&dist(t,at(e.s))<range).sort((a,b)=>b.s-a.s);if(targets.length){let count=t.k==='ashe'?(t.up>=2?3:t.up===1?2:1):1;for(let e of targets.slice(0,count))attack(t,e);t.cd=1/aspeed(t)}}for(let i=enemies.length-1;i>=0;i--){let e=enemies[i];if(e.hp<=0)enemies.splice(i,1);else if(e.s>=total){enemies.splice(i,1);life--;if(life<=0){active=false;over=true;$('message').textContent='Fim de jogo! Reinicie para tentar novamente.'}}}// Update projectiles first, then apply special damage to an explicitly bounded list.
@@ -252,11 +252,17 @@ for(const f of fx){
 for(const f of completedSpecials){
  const anchor=f.targetS;
  const center=f.target&&f.target.hp>0?at(f.target.s):at(anchor);
- // TESTE DE ISOLAMENTO: a explosão é 100% visual. Não chama hit(),
- // não altera inimigos, ouro, vidas, fila ou estado da onda.
- const victims=[];
+ // v6.9: experimento controlado. Somente o alvo original recebe 1 HP
+ // de dano direto. Sem hit(), sem dano em área, sem eliminar camadas,
+ // sem mexer na fila de inimigos nem no estado da onda.
+ const target=f.target;
+ let damaged=false;
+ if(target && enemies.includes(target) && target.hp>1 && target.layer>0){
+  target.hp-=1;
+  damaged=true;
+ }
  fx.push({iceExplosion:true,x:center.x,y:center.y-8,r:75,ttl:.42,maxT:.42});
- $('message').textContent='v6.8 TESTE: explosão visual, 0 dano especial';
+ $('message').textContent=damaged?'v6.9: especial atingiu 1 inimigo (-1 HP)':'v6.9: explosão visual; alvo indisponível';
 }
 fx=fx.filter(f=>f.iceSpecial?f.ttl>0:(f.ttl-=dt)>0);
 if(!remaining&&!enemies.length&&!fx.some(f=>f.arrow)&&!over){active=false;gold+=40;$('message').textContent=wave===25?'Vitória! Você concluiu as 25 ondas!':'Onda '+wave+' concluída! +40 ouro.'}ui()}
